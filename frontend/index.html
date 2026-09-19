@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManuScan — Manuscript Damage Analysis</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">
+        <div class="brand-mark">
+            <span>M</span>
+        </div>
+
+        <div class="brand-text">
+            <strong>ManuScan</strong>
+            <small>Manuscript Intelligence</small>
+        </div>
+    </div>
+
+    <div class="nav-pill">
+        <span class="live-dot"></span>
+        DAMAGE ANALYSIS SYSTEM
+    </div>
+</nav>
+
+
+<main>
+
+    <!-- HERO -->
+    <section class="hero">
+
+        <div class="hero-copy">
+
+            <div class="eyebrow">
+                <span>✦</span>
+                DIGITAL MANUSCRIPT PRESERVATION
+            </div>
+
+            <h1>
+                See the damage<br>
+                <em>before it spreads.</em>
+            </h1>
+
+            <p>
+                ManuScan uses artificial intelligence to analyze
+                manuscript images, identify damaged regions and
+                estimate the affected area.
+            </p>
+
+            <div class="hero-points">
+                <div>
+                    <span>✓</span>
+                    Automated detection
+                </div>
+
+                <div>
+                    <span>✓</span>
+                    Visual damage mapping
+                </div>
+
+                <div>
+                    <span>✓</span>
+                    Damage percentage
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+            <div class="document-card">
+
+                <div class="document-top">
+                    <span>MANUSCRIPT</span>
+                    <span>ANALYSIS</span>
+                </div>
+
+                <div class="document-lines">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+
+                <div class="damage-mark mark-one"></div>
+                <div class="damage-mark mark-two"></div>
+                <div class="damage-mark mark-three"></div>
+
+                <div class="scan-line"></div>
+
+            </div>
+
+            <div class="floating-card">
+                <span class="mini-dot"></span>
+                Damage regions detected
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ANALYZER -->
+    <section class="analyzer">
+
+        <div class="section-title">
+            <div class="section-number">01</div>
+
+            <div>
+                <span>ANALYSIS WORKSPACE</span>
+                <h2>Upload a manuscript</h2>
+                <p>
+                    Upload an image to begin manuscript damage analysis.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="workspace">
+
+            <label for="fileInput" class="drop-zone">
+
+                <div class="drop-icon">
+                    <span>↑</span>
+                </div>
+
+                <h3>Drop your manuscript here</h3>
+
+                <p>
+                    or <strong>browse your computer</strong>
+                </p>
+
+                <div class="format-pill">
+                    PNG&nbsp;&nbsp; JPG&nbsp;&nbsp; JPEG
+                </div>
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept="image/*"
+                >
+
+            </label>
+
+
+            <div id="selectedFile" class="selected-file"></div>
+
+
+            <button id="analyzeBtn" class="analyze-btn">
+
+                <span class="button-icon">✦</span>
+
+                <span>Analyze Manuscript</span>
+
+                <span class="button-arrow">→</span>
+
+            </button>
+
+
+            <p id="status" class="status-message"></p>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESULTS -->
+    <section id="results" class="results hidden">
+
+        <div class="section-title">
+            <div class="section-number">02</div>
+
+            <div>
+                <span>DAMAGE ANALYSIS</span>
+                <h2>Damage assessment</h2>
+                <p>
+                    Visual comparison of the manuscript before and after analysis.
+                </p>
+            </div>
+        </div>
+
+
+        <!-- DAMAGE SCORE -->
+        <div class="score-card">
+
+            <div class="score-info">
+
+                <div class="score-label">
+                    <span class="score-dot"></span>
+                    DETECTED DAMAGE
+                </div>
+
+                <h3 id="damagePercentage">0%</h3>
+
+                <p>
+                    Estimated percentage of the manuscript
+                    identified as damaged.
+                </p>
+
+            </div>
+
+            <div class="score-ring">
+                <div>
+                    <span>MODEL</span>
+                    <strong>SCAN</strong>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- IMAGE COMPARISON -->
+        <div class="comparison">
+
+            <div class="result-card">
+
+                <div class="result-header">
+                    <div>
+                        <small>INPUT</small>
+                        <h3>Original manuscript</h3>
+                    </div>
+
+                    <span class="image-number">01</span>
+                </div>
+
+                <div class="image-frame">
+                    <img
+                        id="originalImage"
+                        alt="Original manuscript"
+                    >
+                </div>
+
+            </div>
+
+
+            <div class="result-card highlighted">
+
+                <div class="result-header">
+
+                    <div>
+                        <small>ANALYSIS OUTPUT</small>
+                        <h3>Detected damage</h3>
+                    </div>
+
+                    <span class="image-number red">02</span>
+
+                </div>
+
+                <div class="image-frame">
+                    <img
+                        id="overlayImage"
+                        alt="Detected manuscript damage"
+                    >
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="legend">
+            <span class="legend-mark"></span>
+            Red regions represent areas identified by the model as damaged.
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- FOOTER -->
+<footer>
+
+    <div class="footer-brand">
+        <strong>ManuScan</strong>
+        <span>Digital manuscript preservation</span>
+    </div>
+
+    <span class="footer-note">
+        Manuscript Damage Detection System
+    </span>
+
+</footer>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
