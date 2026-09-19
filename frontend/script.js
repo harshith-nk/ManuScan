@@ -1,4 +1,3 @@
-
 const fileInput = document.getElementById("fileInput");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const statusText = document.getElementById("status");
@@ -11,11 +10,93 @@ const damagePercentage = document.getElementById("damagePercentage");
 const originalImage = document.getElementById("originalImage");
 const overlayImage = document.getElementById("overlayImage");
 
+let selectedOriginalFile = null;
+
+
+// --------------------------------------------------
+// Compress image before sending to Vercel
+// --------------------------------------------------
+
+async function prepareUpload(file) {
+
+    const MAX_DIMENSION = 2048;
+    const TARGET_MAX_BYTES = 3.5 * 1024 * 1024;
+
+    const bitmap = await createImageBitmap(file);
+
+    let width = bitmap.width;
+    let height = bitmap.height;
+
+    const scale = Math.min(
+        1,
+        MAX_DIMENSION / Math.max(width, height)
+    );
+
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(
+        bitmap,
+        0,
+        0,
+        width,
+        height
+    );
+
+    bitmap.close();
+
+    let quality = 0.85;
+    let blob;
+
+    do {
+
+        blob = await new Promise(resolve => {
+            canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                quality
+            );
+        });
+
+        quality -= 0.05;
+
+    } while (
+        blob.size > TARGET_MAX_BYTES &&
+        quality >= 0.50
+    );
+
+    if (!blob) {
+        throw new Error("Unable to prepare image for upload.");
+    }
+
+    return new File(
+        [blob],
+        "manuscan_upload.jpg",
+        {
+            type: "image/jpeg"
+        }
+    );
+}
+
+
+// --------------------------------------------------
+// File selection
+// --------------------------------------------------
+
 fileInput.addEventListener("change", () => {
 
     const file = fileInput.files[0];
 
     if (!file) return;
+
+    selectedOriginalFile = file;
 
     if (selectedFile) {
         selectedFile.textContent = file.name;
@@ -23,6 +104,7 @@ fileInput.addEventListener("change", () => {
     }
 
     if (dropZone) {
+
         dropZone.classList.add("file-selected");
 
         dropZone.innerHTML = `
@@ -60,7 +142,9 @@ fileInput.addEventListener("change", () => {
         results.classList.add("hidden");
     }
 
-    statusText.textContent = "Image selected. Ready for analysis.";
+    statusText.textContent =
+        "Image selected. Ready for analysis.";
+
     statusText.classList.remove("error");
 
     analyzeBtn.disabled = false;
@@ -68,13 +152,21 @@ fileInput.addEventListener("change", () => {
 });
 
 
+// --------------------------------------------------
+// Analyze manuscript
+// --------------------------------------------------
+
 analyzeBtn.addEventListener("click", async () => {
 
-    const file = fileInput.files[0];
+    const file = selectedOriginalFile || fileInput.files[0];
 
     if (!file) {
-        statusText.textContent = "Please select a manuscript image.";
+
+        statusText.textContent =
+            "Please select a manuscript image.";
+
         statusText.classList.add("error");
+
         return;
     }
 
@@ -86,14 +178,24 @@ analyzeBtn.addEventListener("click", async () => {
     `;
 
     statusText.textContent =
-        "Analyzing manuscript damage. Please wait...";
+        "Preparing manuscript image for analysis...";
 
     statusText.classList.remove("error");
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
+
+        // Compress/resize only the copy sent to the backend
+        const uploadFile = await prepareUpload(file);
+
+        statusText.textContent =
+            "Analyzing manuscript damage. Please wait...";
+
+        const formData = new FormData();
+
+        formData.append(
+            "file",
+            uploadFile
+        );
 
         const response = await fetch("/analyze", {
             method: "POST",
@@ -101,7 +203,10 @@ analyzeBtn.addEventListener("click", async () => {
         });
 
         if (!response.ok) {
-            throw new Error("API request failed: " + response.status);
+
+            throw new Error(
+                "API request failed: " + response.status
+            );
         }
 
         const data = await response.json();
@@ -109,6 +214,7 @@ analyzeBtn.addEventListener("click", async () => {
         damagePercentage.textContent =
             data.damage_percentage + "%";
 
+        // Keep showing the ORIGINAL image here
         originalImage.src =
             URL.createObjectURL(file);
 
@@ -121,14 +227,17 @@ analyzeBtn.addEventListener("click", async () => {
             "Analysis completed successfully.";
 
         analyzeBtn.disabled = false;
+
         analyzeBtn.textContent =
             "Analyze Another Manuscript";
 
         setTimeout(() => {
+
             results.scrollIntoView({
                 behavior: "smooth",
                 block: "start"
             });
+
         }, 150);
 
     } catch (error) {
@@ -141,6 +250,7 @@ analyzeBtn.addEventListener("click", async () => {
         statusText.classList.add("error");
 
         analyzeBtn.disabled = false;
+
         analyzeBtn.textContent =
             "Try Analysis Again";
     }
