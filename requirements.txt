@@ -3,6 +3,5 @@ uvicorn[standard]
 python-multipart
 torch
 torchvision
-segmentation-models-pytorch
 Pillow
 numpy

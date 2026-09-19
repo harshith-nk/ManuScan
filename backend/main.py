@@ -1,26 +1,17 @@
-import os
-import io
-import base64
-import torch
-import numpy as np
 
+import os
+import base64
+from io import BytesIO
+
+import numpy as np
+import torch
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from torchvision import transforms
-import segmentation_models_pytorch as smp
 
-MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "best_manuscan_unet.pth"))
-FRONTEND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-app = FastAPI(
-    title="ManuScan API",
-    description="Manuscript damage detection and percentage estimation API",
-    version="1.0.0"
-)
+app = FastAPI(title="ManuScan API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +20,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+MODEL_PATH = os.path.join(BASE_DIR, "manuscan_unet_scripted.pt")
+FRONTEND_PATH = os.path.join(BASE_DIR, "frontend")
+
+DEVICE = torch.device("cpu")
+
+model = torch.jit.load(MODEL_PATH, map_location=DEVICE)
+model.eval()
 
 image_transform = transforms.Compose([
     transforms.Resize(
@@ -42,40 +42,7 @@ image_transform = transforms.Compose([
     )
 ])
 
-model = smp.Unet(
-    encoder_name="resnet18",
-    encoder_weights=None,
-    in_channels=3,
-    classes=1
-)
-
-model.load_state_dict(
-    torch.load(MODEL_PATH, map_location=DEVICE)
-)
-
-model = model.to(DEVICE)
-model.eval()
-
-
-@app.get("/")
-def root():
-    return FileResponse(
-        os.path.join(FRONTEND_PATH, "index.html")
-    )
-
-
-@app.get("/style.css")
-def style():
-    return FileResponse(
-        os.path.join(FRONTEND_PATH, "style.css")
-    )
-
-
-@app.get("/script.js")
-def script():
-    return FileResponse(
-        os.path.join(FRONTEND_PATH, "script.js")
-    )
+THRESHOLD = 0.20
 
 
 @app.get("/api")
@@ -86,26 +53,27 @@ def api_status():
     }
 
 
-@app.post("/analyze")
-async def analyze_manuscript(
-    file: UploadFile = File(...)
-):
-    image_bytes = await file.read()
+@app.get("/")
+def serve_frontend():
+    return FileResponse(
+        os.path.join(FRONTEND_PATH, "index.html")
+    )
 
-    original = Image.open(
-        io.BytesIO(image_bytes)
-    ).convert("RGB")
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+
+    contents = await file.read()
+    original = Image.open(BytesIO(contents)).convert("RGB")
 
     original_size = original.size
 
-    input_tensor = image_transform(
-        original
-    ).unsqueeze(0).to(DEVICE)
+    input_tensor = image_transform(original).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
         output = model(input_tensor)
         probability = torch.sigmoid(output)
-        prediction = (probability > 0.20).float()
+        prediction = (probability > THRESHOLD).float()
 
     mask = prediction.squeeze().cpu().numpy()
 
@@ -131,13 +99,8 @@ async def analyze_manuscript(
 
     overlay_image = Image.fromarray(overlay)
 
-    buffer = io.BytesIO()
-
-    overlay_image.save(
-        buffer,
-        format="JPEG",
-        quality=90
-    )
+    buffer = BytesIO()
+    overlay_image.save(buffer, format="JPEG", quality=90)
 
     overlay_base64 = base64.b64encode(
         buffer.getvalue()
