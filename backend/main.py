@@ -8,6 +8,7 @@ import torch
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from torchvision import transforms
 
@@ -58,6 +59,12 @@ def serve_frontend():
     return FileResponse(
         os.path.join(FRONTEND_PATH, "index.html")
     )
+
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_PATH),
+    name="frontend"
+)
 
 
 @app.post("/analyze")
