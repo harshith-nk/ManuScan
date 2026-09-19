@@ -60,13 +60,6 @@ def serve_frontend():
         os.path.join(FRONTEND_PATH, "index.html")
     )
 
-app.mount(
-    "/",
-    StaticFiles(directory=FRONTEND_PATH),
-    name="frontend"
-)
-
-
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
 
@@ -122,3 +115,9 @@ async def analyze(file: UploadFile = File(...)):
         "original_height": original_size[1],
         "overlay": overlay_base64
     }
+
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_PATH),
+    name="frontend"
+)
